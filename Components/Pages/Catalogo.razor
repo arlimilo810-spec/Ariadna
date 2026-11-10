@@ -1,0 +1,62 @@
+@page "/catalogo"
+@using sharpness_sharp.Data
+@using sharpness_sharp.Data.Models
+@using sharpness_sharp.Components.UIComponents
+@inject ApplicationAuthDbContext _dbService
+ 
+<h1>Catálogo</h1>
+ 
+<EditForm FormName="agregar-cafe" Model="@newCafe" OnSubmit="AgregarCafe">
+    <InputText @bind-Value="newCafe.Imagen" placeholder="url de la imagen" />
+    <InputText @bind-Value="newCafe.NombreCafe" placeholder="nombre del cafe" />
+    <InputText @bind-Value="newCafe.DescripcionCafe" placeholder="descripcion" />
+    <InputNumber @bind-Value="newCafe.PrecioCafe" />
+    <button type="submit">Guardar</button>
+</EditForm>
+ 
+@foreach (Cafe cafe in lstCafes)
+{
+    <CoffeeCard Id="@cafe.Id" Imagen="@cafe.Imagen" NombreCafe="@cafe.NombreCafe"
+                DescripcionCafe="@cafe.DescripcionCafe" PrecioCafe="@cafe.PrecioCafe"
+                OnEliminar="EliminarCafe" OnActualizar="ActualizarCafe"></CoffeeCard>
+}
+ 
+@code {
+    private List<Cafe> lstCafes = new();
+    private Cafe newCafe = new();
+ 
+    protected override void OnInitialized()
+    {
+        lstCafes = _dbService.Cafes.ToList();
+    }
+ 
+    private void AgregarCafe()
+    {
+        _dbService.Cafes.Add(newCafe);
+        _dbService.SaveChanges();
+        lstCafes.Add(newCafe);
+        newCafe = new();
+    }
+ 
+    private void EliminarCafe(int id)
+    {
+        Cafe? cafe = lstCafes.FirstOrDefault(c => c.Id == id);
+        if (cafe is null) return;
+ 
+        _dbService.Cafes.Remove(cafe);
+        _dbService.SaveChanges();
+        lstCafes.Remove(cafe);
+    }
+ 
+    private void ActualizarCafe(Cafe cafeEditado)
+    {
+        Cafe? cafe = lstCafes.FirstOrDefault(c => c.Id == cafeEditado.Id);
+        if (cafe is null) return;
+ 
+        cafe.Imagen = cafeEditado.Imagen;
+        cafe.NombreCafe = cafeEditado.NombreCafe;
+        cafe.DescripcionCafe = cafeEditado.DescripcionCafe;
+        cafe.PrecioCafe = cafeEditado.PrecioCafe;
+        _dbService.SaveChanges();
+    }
+}

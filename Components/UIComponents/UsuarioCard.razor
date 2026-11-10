@@ -1,0 +1,36 @@
+@using sharpness_sharp.Data
+ 
+<div style="border:2px solid black; border-radius:8px; padding:12px; margin:8px;">
+    <input @bind="emailEdit" placeholder="email" /><br />
+    <input @bind="userNameEdit" placeholder="username" /><br />
+ 
+    <button @onclick="Actualizar">Actualizar</button>
+    <button @onclick="() => OnEliminar.InvokeAsync(Id)">Eliminar</button>
+</div>
+ 
+@code {
+    [Parameter] public string Id { get; set; } = "";
+    [Parameter] public string? Email { get; set; }
+    [Parameter] public string? UserName { get; set; }
+    [Parameter] public EventCallback<string> OnEliminar { get; set; }
+    [Parameter] public EventCallback<ApplicationUser> OnActualizar { get; set; }
+ 
+    private string? emailEdit;
+    private string? userNameEdit;
+ 
+    protected override void OnInitialized()
+    {
+        emailEdit = Email;
+        userNameEdit = UserName;
+    }
+ 
+    private Task Actualizar()
+    {
+        return OnActualizar.InvokeAsync(new ApplicationUser
+        {
+            Id = Id,
+            Email = emailEdit,
+            UserName = userNameEdit
+        });
+    }
+}

@@ -1,0 +1,100 @@
+@page "/usuarios"
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
+@using sharpness_sharp.Components.UIComponents
+@using sharpness_sharp.Data
+@inject ApplicationAuthDbContext _dbService
+@inject UserManager<ApplicationUser> _userManager
+ 
+<h1>Usuarios</h1>
+ 
+<EditForm FormName="crear-usuario" Model="@nuevo" OnValidSubmit="CrearUsuario">
+    <DataAnnotationsValidator />
+    <InputText @bind-Value="nuevo.Email" placeholder="email" />
+    <InputText @bind-Value="nuevo.UserName" placeholder="username" />
+    <InputText type="password" @bind-Value="nuevo.Password" placeholder="password" />
+    <button type="submit">Crear usuario</button>
+    <ValidationSummary />
+    <p style="color:red">@mensaje</p>
+</EditForm>
+ 
+@foreach (ApplicationUser user in lstUsuarios)
+{
+    <UsuarioCard @key="user.Id" Id="@user.Id" Email="@user.Email" UserName="@user.UserName"
+                 OnEliminar="EliminarUsuario" OnActualizar="ActualizarUsuario"></UsuarioCard>
+}
+ 
+@code {
+    private NuevoUsuario nuevo = new();
+    private List<ApplicationUser> lstUsuarios = new();
+    private string mensaje = "";
+ 
+    protected override void OnInitialized()
+    {
+        lstUsuarios = _dbService.Users.ToList();
+    }
+ 
+    private async Task CrearUsuario()
+    {
+        ApplicationUser usuario = new()
+        {
+            UserName = nuevo.UserName,
+            Email = nuevo.Email,
+            EmailConfirmed = true
+        };
+ 
+        IdentityResult resultado = await _userManager.CreateAsync(usuario, nuevo.Password);
+        if (!resultado.Succeeded)
+        {
+            mensaje = string.Join(" ", resultado.Errors.Select(e => e.Description));
+            return;
+        }
+ 
+        lstUsuarios.Add(usuario);
+        nuevo = new();
+        mensaje = "";
+    }
+ 
+    private async Task ActualizarUsuario(ApplicationUser editado)
+    {
+        ApplicationUser? usuario = await _userManager.FindByIdAsync(editado.Id);
+        if (usuario is null) return;
+ 
+        IdentityResult resultado = await _userManager.SetUserNameAsync(usuario, editado.UserName);
+        if (resultado.Succeeded)
+        {
+            resultado = await _userManager.SetEmailAsync(usuario, editado.Email);
+        }
+        if (resultado.Succeeded)
+        {
+            usuario.EmailConfirmed = true;
+            resultado = await _userManager.UpdateAsync(usuario);
+        }
+ 
+        mensaje = resultado.Succeeded ? "" : string.Join(" ", resultado.Errors.Select(e => e.Description));
+    }
+ 
+    private async Task EliminarUsuario(string id)
+    {
+        ApplicationUser? usuario = lstUsuarios.FirstOrDefault(u => u.Id == id);
+        if (usuario is null) return;
+ 
+        IdentityResult resultado = await _userManager.DeleteAsync(usuario);
+        if (resultado.Succeeded)
+        {
+            lstUsuarios.Remove(usuario);
+        }
+    }
+ 
+    private sealed class NuevoUsuario
+    {
+        [Required, EmailAddress]
+        public string Email { get; set; } = "";
+ 
+        [Required]
+        public string UserName { get; set; } = "";
+ 
+        [Required]
+        public string Password { get; set; } = "";
+    }
+}

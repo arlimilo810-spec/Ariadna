@@ -1,0 +1,59 @@
+@using sharpness_sharp.Data.Models
+ 
+<div style="border:2px solid black; border-radius:8px; padding:12px; margin:8px;">
+    @if (editando)
+    {
+        <input @bind="imagenEdit" placeholder="url de la imagen" /><br />
+        <input @bind="nombreEdit" placeholder="nombre" /><br />
+        <input @bind="descripcionEdit" placeholder="descripcion" /><br />
+        <input type="number" @bind="precioEdit" placeholder="precio" />
+    }
+    else
+    {
+        <h2>@NombreCafe</h2>
+        <p><b>Descripción: </b>@DescripcionCafe</p>
+        <p><b>@PrecioCafe Bs.</b></p>
+    }
+ 
+    <button @onclick="AlternarEdicion">@(editando ? "Guardar" : "Editar")</button>
+    <button @onclick="() => OnEliminar.InvokeAsync(Id)">Eliminar</button>
+</div>
+ 
+@code {
+    [Parameter] public int Id { get; set; }
+    [Parameter] public string? Imagen { get; set; }
+    [Parameter] public string? NombreCafe { get; set; }
+    [Parameter] public string? DescripcionCafe { get; set; }
+    [Parameter] public decimal PrecioCafe { get; set; }
+    [Parameter] public EventCallback<int> OnEliminar { get; set; }
+    [Parameter] public EventCallback<Cafe> OnActualizar { get; set; }
+ 
+    private bool editando;
+    private string? imagenEdit;
+    private string? nombreEdit;
+    private string? descripcionEdit;
+    private decimal precioEdit;
+ 
+    private async Task AlternarEdicion()
+    {
+        if (!editando)
+        {
+            imagenEdit = Imagen;
+            nombreEdit = NombreCafe;
+            descripcionEdit = DescripcionCafe;
+            precioEdit = PrecioCafe;
+            editando = true;
+            return;
+        }
+ 
+        await OnActualizar.InvokeAsync(new Cafe
+        {
+            Id = Id,
+            Imagen = imagenEdit,
+            NombreCafe = nombreEdit,
+            DescripcionCafe = descripcionEdit,
+            PrecioCafe = precioEdit
+        });
+        editando = false;
+    }
+}
